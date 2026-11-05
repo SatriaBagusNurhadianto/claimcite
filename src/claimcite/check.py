@@ -16,7 +16,7 @@ _ELLIPSIS = re.compile(r"\s*(?:…+|\.\.\.+)\s*")
 
 
 def _norm(s: str) -> str:
-    s = unicodedata.normalize("NFKC", s).lower().replace("·", ".")
+    s = unicodedata.normalize("NFKC", s).lower().replace("·", ".").replace("×", "x")
     s = re.sub(r"[‐-―−]", "-", s)
     return re.sub(r"\s+", " ", s).strip()
 
@@ -61,9 +61,10 @@ def check_reference(ref: Reference, lookup: Lookup) -> Finding:
 
     f = Finding(ref, status="ok", exists=True, record=record)
     f.title_match = compare_titles(ref.title, record.title)
-    if ref.year and record.year:
-        # Online-first and print years often differ by one.
-        f.year_match = abs(ref.year - record.year) <= 1
+    years = record.years or ([record.year] if record.year else [])
+    if ref.year and years:
+        # Papers have online, print and issue years; any of them, give or take one, is fine.
+        f.year_match = any(abs(ref.year - y) <= 1 for y in years)
     text = " ".join(filter(None, [record.title, record.abstract]))
     f.quotes = [(q, quote_found(q, record.abstract and text)) for q in ref.quotes]
     f.evidence = (

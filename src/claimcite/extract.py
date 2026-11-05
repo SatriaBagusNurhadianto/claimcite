@@ -23,6 +23,10 @@ URL_RE = re.compile(r"https?://" + _ASCII_TOKEN)
 
 YEAR_RE = re.compile(r"\((\d{4})(?:-\d{1,2}(?:-\d{1,2})?)?[a-z]?\)")
 TITLE_RE = re.compile(r"\(\d{4}[^)]*\)\.\s*(.+?)(?:\.\s|\.?\s*$|[：:]\s*[「“\"])")
+# "Journal of X, 41(2), 181-202": the author gave the journal, not the title.
+JOURNAL_ONLY = re.compile(r"^[^.?!]{3,150},\s*\d+\s*(?:\(\d+\))?\s*(?:,\s*[eE]?\d+(?:[-–]\d+)?)?$")
+# "Is it true? Psychological Science, 26": title ends at the question mark.
+TITLE_THEN_JOURNAL = re.compile(r"^(.+?[?!])\s+[A-Z][^?!]*,\s*\d+.*$")
 QUOTE_RES = [re.compile(r"「(.+?)」"), re.compile(r"“(.+?)”"), re.compile(r"\"([^\"]{4,}?)\"")]
 LEADING_NOISE = re.compile(r"^(?:\s|[；;,，、]|（[^）]*）|\([^)]*\)(?=\s*[；;])|[-*]\s*|来源[：:]|Sources?:)+", re.IGNORECASE)
 
@@ -41,6 +45,10 @@ def _describe(segment: str) -> tuple[int | None, str | None, list[str], str]:
     year_m = YEAR_RE.search(seg)
     title_m = TITLE_RE.search(seg)
     title = title_m.group(1).strip().rstrip(".") if title_m else None
+    if title and JOURNAL_ONLY.match(title):
+        title = None
+    elif title and (m := TITLE_THEN_JOURNAL.match(title)):
+        title = m.group(1)
     quotes = []
     for rx in QUOTE_RES:
         quotes += [q.strip() for q in rx.findall(seg)]

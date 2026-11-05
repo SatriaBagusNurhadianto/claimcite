@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import re
@@ -40,6 +41,10 @@ def parse_pubmed(xml: str) -> dict[str, Record]:
         if not year:
             medline = art.findtext(".//PubDate/MedlineDate") or ""
             year = medline[:4] if medline[:4].isdigit() else None
+        years = []
+        for y in (year, art.findtext(".//Article/ArticleDate/Year")):
+            if y and int(y) not in years:
+                years.append(int(y))
         doi = next(
             (i.text for i in art.iterfind("PubmedData/ArticleIdList/ArticleId") if i.get("IdType") == "doi"),
             None,
@@ -50,6 +55,7 @@ def parse_pubmed(xml: str) -> dict[str, Record]:
             source="pubmed",
             title=_text(art.find(".//Article/ArticleTitle")),
             year=int(year) if year else None,
+            years=years,
             doi=doi.lower() if doi else None,
             pmid=pmid,
             abstract=abstract,
@@ -60,16 +66,31 @@ def parse_pubmed(xml: str) -> dict[str, Record]:
     return out
 
 
+def clean_markup(s: str | None) -> str | None:
+    """Crossref titles and abstracts carry JATS/HTML markup, sometimes escaped twice."""
+    if not s:
+        return None
+    s = html.unescape(html.unescape(s))
+    s = re.sub(r"<xref\b[^>]*>.*?</xref>", "", s, flags=re.DOTALL)  # footnote markers
+    s = re.sub(r"\s*(<su[bp]\b)", r"\1", s)  # "D <sub>3</sub>" -> "D3"
+    s = re.sub(r"<(?:jats:)?(?:p|title|sec)\b[^>]*>", " ", s)  # block tags separate words
+    return re.sub(r"\s+", " ", _TAG.sub("", s)).strip() or None
+
+
 def parse_crossref(payload: str) -> Record:
     msg = json.loads(payload)["message"]
-    parts = (msg.get("issued") or {}).get("date-parts") or [[None]]
-    abstract = msg.get("abstract")
+    years = []
+    for key in ("issued", "published-print", "published-online", "published"):
+        y = ((msg.get(key) or {}).get("date-parts") or [[None]])[0][0]
+        if y and y not in years:
+            years.append(y)
     return Record(
         source="crossref",
-        title=(msg.get("title") or [None])[0],
-        year=parts[0][0],
+        title=clean_markup((msg.get("title") or [None])[0]),
+        year=years[0] if years else None,
+        years=years,
         doi=(msg.get("DOI") or "").lower() or None,
-        abstract=re.sub(r"\s+", " ", _TAG.sub(" ", abstract)).strip() if abstract else None,
+        abstract=clean_markup(msg.get("abstract")),
     )
 
 

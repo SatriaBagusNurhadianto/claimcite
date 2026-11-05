@@ -23,6 +23,7 @@ class Record:
     source: str
     title: str | None = None
     year: int | None = None
+    years: list[int] = field(default_factory=list)  # every known publication year (online, print, issue)
     doi: str | None = None
     pmid: str | None = None
     abstract: str | None = None
