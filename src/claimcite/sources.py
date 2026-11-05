@@ -62,6 +62,7 @@ def parse_pubmed(xml: str) -> dict[str, Record]:
             pub_types=[p.text for p in art.iter("PublicationType") if p.text],
             humans="Humans" in mesh,
             animals="Animals" in mesh,
+            retracted="Retracted Publication" in {p.text for p in art.iter("PublicationType") if p.text},
         )
     return out
 
@@ -84,6 +85,17 @@ def parse_crossref(payload: str) -> Record:
         y = ((msg.get(key) or {}).get("date-parts") or [[None]])[0][0]
         if y and y not in years:
             years.append(y)
+    # Retraction detection: Crossref records a retraction via update-to / relation.
+    retracted = False
+    retraction_doi = None
+    for upd in (msg.get("update-to") or []):
+        if str(upd.get("type", "")).lower() == "retraction":
+            retracted = True
+            retraction_doi = (upd.get("DOI") or upd.get("doi") or "").lower() or retraction_doi
+    rel = msg.get("relation") or {}
+    for entry in (rel.get("is-retracted-by") or []):
+        retracted = True
+        retraction_doi = (entry.get("id") or entry.get("DOI") or "").lower() or retraction_doi
     return Record(
         source="crossref",
         title=clean_markup((msg.get("title") or [None])[0]),
@@ -91,6 +103,8 @@ def parse_crossref(payload: str) -> Record:
         years=years,
         doi=(msg.get("DOI") or "").lower() or None,
         abstract=clean_markup(msg.get("abstract")),
+        retracted=retracted,
+        retraction_doi=retraction_doi,
     )
 
 

@@ -30,6 +30,8 @@ class Record:
     pub_types: list[str] = field(default_factory=list)
     humans: bool = False
     animals: bool = False
+    retracted: bool = False
+    retraction_doi: str | None = None
 
 
 @dataclass(frozen=True)
