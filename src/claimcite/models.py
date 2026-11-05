@@ -53,3 +53,4 @@ class Finding:
     quotes: list[tuple[str, bool | None]] = field(default_factory=list)
     evidence: Evidence | None = None
     error: str | None = None  # set when a registry could not be reached
+    retracted: str | None = None  # set when the paper has been retracted

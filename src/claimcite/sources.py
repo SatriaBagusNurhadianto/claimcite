@@ -85,17 +85,20 @@ def parse_crossref(payload: str) -> Record:
         y = ((msg.get(key) or {}).get("date-parts") or [[None]])[0][0]
         if y and y not in years:
             years.append(y)
-    # Retraction detection: Crossref records a retraction via update-to / relation.
+    # Retraction detection: a paper is retracted when its Crossref record
+    # carries `updated-by` with type "retraction" (the retracted paper is
+    # pointed at by the retraction notice). `update-to` runs the other way
+    # (it sits on the notice), so it must not be used here.
     retracted = False
     retraction_doi = None
-    for upd in (msg.get("update-to") or []):
+    for upd in (msg.get("updated-by") or []):
         if str(upd.get("type", "")).lower() == "retraction":
             retracted = True
             retraction_doi = (upd.get("DOI") or upd.get("doi") or "").lower() or retraction_doi
     rel = msg.get("relation") or {}
     for entry in (rel.get("is-retracted-by") or []):
         retracted = True
-        retraction_doi = (entry.get("id") or entry.get("DOI") or "").lower() or retraction_doi
+        retraction_doi = (entry.get("id") or entry.get("DOI") or entry.get("doi") or "").lower() or retraction_doi
     return Record(
         source="crossref",
         title=clean_markup((msg.get("title") or [None])[0]),
