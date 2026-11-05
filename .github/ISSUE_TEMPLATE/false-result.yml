@@ -1,0 +1,22 @@
+name: Wrong result · 结果不对
+description: claimcite flagged a correct citation, or missed a wrong one · 正确的引用被报错，或错误的引用没被发现
+labels: [accuracy]
+body:
+  - type: textarea
+    attributes:
+      label: Citation text · 引用原文
+      description: Paste the exact line from your document · 粘贴文档里的原始那一行
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What claimcite said · claimcite 的输出
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: What it should have said, and why · 应该是什么结果，为什么
+    validations:
+      required: true

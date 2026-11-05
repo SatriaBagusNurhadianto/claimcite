@@ -1,0 +1,16 @@
+name: New source or format · 新数据源或新格式
+description: Propose a registry (OpenAlex, CNKI…) or a citation format (footnotes, BibTeX…) · 提议新的数据源或引用格式
+labels: [enhancement]
+body:
+  - type: input
+    attributes:
+      label: Source or format · 数据源或格式
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Example citations · 引用示例
+      description: Real examples help most · 真实例子最有用
+  - type: textarea
+    attributes:
+      label: API / docs · 接口文档

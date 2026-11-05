@@ -1,0 +1,34 @@
+[project]
+name = "claimcite"
+version = "0.1.0.dev0"
+description = "Check that every citation in a document is real, matches what the text says it is, and supports the quoted words."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = []
+keywords = ["citation", "fact-checking", "pubmed", "crossref", "doi", "evidence-based", "hallucination"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Text Processing",
+]
+
+[project.scripts]
+claimcite = "claimcite.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/wasabihu/claimcite"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
